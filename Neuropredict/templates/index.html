@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Alzheimer’s Risk Questionnaire</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(to right, #a1c4fd, #c2e9fb);
+      margin: 0; padding: 20px;
+    }
+    .container {
+      max-width: 700px; margin: 0 auto;
+      background: #fff; padding: 30px;
+      border-radius: 12px; box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+    }
+    h1 { text-align:center; color:#2c3e50; margin-bottom:25px;}
+    .question { margin-bottom:20px; font-weight:bold; color:#34495e; }
+    label {display:block; margin-top:8px; font-weight:normal; color:#2c3e50; cursor:pointer;}
+    input[type="radio"] { margin-right:8px; }
+    button {
+      margin-top:30px; width:100%; padding:14px;
+      font-size:16px; color:white;
+      background-color:#3498db; border:none; border-radius:8px; cursor:pointer;
+      transition: background-color 0.3s ease;
+    }
+    button:hover {background-color:#2980b9;}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>MMSE Questionnaire</h1>
+    <form id="questionnaireForm">
+
+      <!-- 1-7: General Questions -->
+      <div class="question">
+        1. Do you sometimes experience memory loss?
+        <label><input type="radio" name="q1" value="1" required> Yes</label>
+        <label><input type="radio" name="q1" value="0"> No</label>
+      </div>
+
+      <div class="question">
+        2. Is forgetting important things becoming a problem for you?
+        <label><input type="radio" name="q2" value="1" required> Yes</label>
+        <label><input type="radio" name="q2" value="0"> No</label>
+      </div>
+
+      <div class="question">
+        3. Do you have trouble performing daily tasks like cooking, shopping, or managing money?
+        <label><input type="radio" name="q3" value="1" required> Yes</label>
+        <label><input type="radio" name="q3" value="0"> No</label>
+      </div>
+
+      <div class="question">
+        4. Have you noticed recent changes in your behavior or mood?
+        <label><input type="radio" name="q4" value="1" required> Yes</label>
+        <label><input type="radio" name="q4" value="0"> No</label>
+      </div>
+
+      <div class="question">
+        5. Can you perform daily activities without help from others?
+        <label><input type="radio" name="q5" value="0" required> Yes, completely</label>
+        <label><input type="radio" name="q5" value="1"> I need some help</label>
+        <label><input type="radio" name="q5" value="2"> No, I cannot do it alone</label>
+      </div>
+
+      <div class="question">
+        6. Do you ever feel that your sleep quality is poor or insufficient?
+        <label><input type="radio" name="q6" value="1" required> Yes</label>
+        <label><input type="radio" name="q6" value="0"> No</label>
+      </div>
+
+      <div class="question">
+        7. Do you have any problems with blood pressure or heart disease?
+        <label><input type="radio" name="q7" value="1" required> Yes</label>
+        <label><input type="radio" name="q7" value="0"> No</label>
+      </div>
+
+      <!-- 8-12: MMSE Estimation -->
+      <div class="question">
+        8. Do you know today’s date (day/month/year)?
+        <label><input type="radio" name="q8" value="0" required> Not at all</label>
+        <label><input type="radio" name="q8" value="1"> Only part of it</label>
+        <label><input type="radio" name="q8" value="2"> Yes, completely</label>
+      </div>
+
+      <div class="question">
+        9. Can you remember and repeat 3 random words after 1 minute?
+        <label><input type="radio" name="q9" value="0" required> None</label>
+        <label><input type="radio" name="q9" value="1"> 1–2 words</label>
+        <label><input type="radio" name="q9" value="2"> All 3 words</label>
+      </div>
+
+      <div class="question">
+        10. Can you spell the word “WORLD” backward correctly?
+        <label><input type="radio" name="q10" value="0" required> No</label>
+        <label><input type="radio" name="q10" value="1"> Partially</label>
+        <label><input type="radio" name="q10" value="2"> Yes</label>
+      </div>
+
+      <div class="question">
+        11. Do you have difficulty recognizing familiar people or places?
+        <label><input type="radio" name="q11" value="2" required> Frequently</label>
+        <label><input type="radio" name="q11" value="1"> Sometimes</label>
+        <label><input type="radio" name="q11" value="0"> No</label>
+      </div>
+
+      <div class="question">
+        12. Can you follow simple spoken instructions?
+        <label><input type="radio" name="q12" value="0" required> No</label>
+        <label><input type="radio" name="q12" value="1"> Partially</label>
+        <label><input type="radio" name="q12" value="2"> Yes</label>
+      </div>
+
+      <button type="submit">Next: Go to Prediction Form</button>
+    </form>
+  </div>
+
+  <script>
+    document.getElementById('questionnaireForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const form = e.target;
+      const data = {};
+
+      // Save symptom questions
+      for (let i = 1; i <= 7; i++) {
+        data['q' + i] = form['q' + i].value;
+      }
+
+      // MMSE score: raw out of 10
+      let mmseScore = 0;
+      for (let j = 8; j <= 12; j++) {
+        mmseScore += parseInt(form['q' + j].value);
+      }
+
+      // Convert to MMSE out of 30
+      const mmseOutOf30 = Math.round((mmseScore / 10) * 30);
+      data['MMSE'] = mmseOutOf30;
+
+      // Show MMSE score before redirect
+      alert(`✅ Your estimated MMSE score is ${mmseScore} out of 10.\n🧠 Converted to ${mmseOutOf30} out of 30 for clinical use.`);
+
+      // Save all to localStorage
+      localStorage.setItem('questionnaireData', JSON.stringify(data));
+
+      // Redirect to prediction form
+      window.location.href = "/predict-page";
+    });
+  </script>
+</body>
+</html>

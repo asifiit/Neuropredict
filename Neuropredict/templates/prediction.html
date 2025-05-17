@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>NeuroPredict - Alzheimer’s Risk Prediction</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(to right, #a1c4fd, #c2e9fb);
+      margin: 0;
+      padding: 20px;
+    }
+
+    .container {
+      width: 85%;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 30px;
+      background-color: #ffffff;
+      box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+      border-radius: 12px;
+    }
+
+    h1 {
+      text-align: center;
+      color: #2c3e50;
+      margin-bottom: 20px;
+    }
+
+    .form-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      margin-top: 12px;
+    }
+
+    .form-row label {
+      width: 48%;
+      font-weight: bold;
+      color: #34495e;
+    }
+
+    select,
+    input {
+      width: 100%;
+      padding: 10px;
+      margin-top: 5px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      background-color: #f9f9f9;
+      font-size: 15px;
+      box-sizing: border-box;
+    }
+
+    small {
+      color: gray;
+      display: block;
+      margin-top: 5px;
+      font-style: italic;
+    }
+
+    button {
+      margin-top: 25px;
+      padding: 12px 25px;
+      font-size: 16px;
+      color: white;
+      background-color: #3498db;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: 0.3s ease;
+      display: inline-block;
+    }
+
+    button:disabled {
+      background-color: #7fb4db;
+      cursor: not-allowed;
+    }
+
+    button:hover:not(:disabled) {
+      background-color: #2980b9;
+    }
+
+    .result {
+      margin-top: 30px;
+      font-weight: bold;
+      font-size: 18px;
+      color: #2c3e50;
+      text-align: center;
+      min-height: 60px;
+    }
+
+    #shap-plot {
+      margin-top: 30px;
+      text-align: center;
+      min-height: 320px;
+    }
+
+    #shap-plot img {
+      width: 80%;
+      max-width: 600px;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    /* Advice box styles */
+    .advice-box.warning {
+      background: #f8d7da;
+      border-left: 6px solid #dc3545;
+      color: #721c24;
+      padding: 15px 20px;
+      margin-top: 20px;
+      border-radius: 6px;
+      text-align: left;
+      max-width: 700px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .advice-box.success {
+      background: #d4edda;
+      border-left: 6px solid #28a745;
+      color: #155724;
+      padding: 15px 20px;
+      margin-top: 20px;
+      border-radius: 6px;
+      max-width: 700px;
+      margin-left: auto;
+      margin-right: auto;
+      text-align: center;
+    }
+
+    .advice-list {
+      list-style: none;
+      padding-left: 0;
+      margin-top: 10px;
+    }
+
+    .advice-list li {
+      margin-bottom: 10px;
+      display: flex;
+      align-items: flex-start;
+    }
+
+    .advice-bullet {
+      display: inline-block;
+      width: 18px;
+      height: 18px;
+      background-color: #dc3545;
+      border-radius: 50%;
+      margin-right: 10px;
+      margin-top: 5px;
+      flex-shrink: 0;
+    }
+
+    /* Loading spinner style */
+    #loadingSpinner {
+      margin-top: 15px;
+      font-size: 18px;
+      color: #3498db;
+      display: none;
+      text-align: center;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 600px) {
+      .form-row label {
+        width: 100%;
+      }
+    }
+
+    /* Custom MMSE link style */
+    a.mmse-link {
+      color: #2c3e50;           /* Custom dark color */
+      text-decoration: none;    /* Remove underline */
+      cursor: pointer;
+      font-weight: bold;
+    }
+    a.mmse-link:hover {
+      color: #2980b9;           /* Blue on hover */
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🧠 Neuropredict</h1>
+    <form id="predictForm" novalidate>
+      <!-- Education -->
+      <div class="form-row">
+        <label for="educationLevel">Education Level
+          <select id="educationLevel" name="EducationLevel" required>
+            <option value="">-- Select Education Level --</option>
+            <option value="0">None</option>
+            <option value="1">High School</option>
+            <option value="2">Bachelor's</option>
+            <option value="3">Higher</option>
+          </select>
+        </label>
+
+        <label for="sleepQuality">Average Sleep Duration (hours)
+          <select id="sleepQuality" name="SleepQuality" required>
+            <option value="">-- Select Sleep Duration --</option>
+            <option value="4">Less than 4 hrs - Very Poor</option>
+            <option value="5">4–5 hrs - Poor</option>
+            <option value="6">5–6 hrs - Fair</option>
+            <option value="7">6–7 hrs - Good</option>
+            <option value="8">7–8 hrs - Very Good</option>
+            <option value="9">8–9 hrs - Excellent</option>
+            <option value="10">More than 9 hrs - Outstanding</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="form-row">
+        <label for="cardiovascularDisease">Cardiovascular Disease
+          <select id="cardiovascularDisease" name="CardiovascularDisease" required>
+            <option value="">-- Select Option --</option>
+            <option value="0">No</option>
+            <option value="1">Yes</option>
+          </select>
+        </label>
+        <label for="hypertension">Hypertension
+          <select id="hypertension" name="Hypertension" required>
+            <option value="">-- Select Option --</option>
+            <option value="0">No</option>
+            <option value="1">Yes</option>
+          </select>
+        </label>
+      </div>
+
+      <!-- HDL Cholesterol -->
+      <div class="form-row">
+        <label for="cholesterolHDL">HDL Cholesterol (Good Cholesterol)
+          <select id="cholesterolHDL" name="CholesterolHDL" required>
+            <option value="">-- Select from lab report --</option>
+            <option value="20">Very Low – Risky (below 30 mg/dL)</option>
+            <option value="40">Low – Needs Improvement (30–50 mg/dL)</option>
+            <option value="60">Normal – Healthy (50–70 mg/dL)</option>
+            <option value="80">High – Very Good (70–90 mg/dL)</option>
+            <option value="100">Very High – Excellent (&gt; 90 mg/dL)</option>
+          </select>
+          <small>📌 You must know your HDL level from a recent blood test.</small>
+        </label>
+
+        <!-- MMSE select + custom input with clickable label -->
+        <div style="width: 48%; font-weight: bold; color: #34495e; display: flex; flex-direction: column;">
+          <label for="mmseSelect" style="margin-bottom: 5px;">
+            <a href="/index-page" class="mmse-link" title="Go to MMSE info page" target="_blank" rel="noopener noreferrer">
+              MMSE Score(0-30) ℹ️
+            </a>
+          </label>
+          <select id="mmseSelect" name="MMSESelect" style="margin-bottom: 8px;">
+            <option value="">-- Select MMSE Score --</option>
+            <option value="5">0–10: Severe Impairment</option>
+            <option value="15">11–20: Moderate Impairment</option>
+            <option value="25">21–26: Mild Impairment</option>
+            <option value="30">27–30: Normal Cognition</option>
+          </select>
+          <input 
+            type="number" 
+            id="mmseCustom" 
+            name="MMSECustom" 
+            min="0" max="30" 
+            placeholder="Or enter custom MMSE score (0-30)"
+            style="padding: 10px; border-radius: 6px; border: 1px solid #ccc; font-size: 15px;"
+          />
+        </div>
+      </div>
+
+      <div class="form-row">
+        <label for="functionalAssessment">Functional Assessment(Overall Daily Functioning)
+          <select id="functionalAssessment" name="FunctionalAssessment" required>
+            <option value="">-- Select Functional Assessment --</option>
+            <option value="1">Very Impaired (0–2)</option>
+            <option value="4">Somewhat Dependent (3–5)</option>
+            <option value="7">Mostly Independent (6–8)</option>
+            <option value="10">Fully Independent (9–10)</option>
+          </select>
+        </label>
+
+        <label for="memoryComplaints">Memory Complaints
+          <select id="memoryComplaints" name="MemoryComplaints" required>
+            <option value="">-- Select Option --</option>
+            <option value="0">No</option>
+            <option value="1">Yes</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="form-row">
+        <label for="behavioralProblems">Behavioral Problems
+          <select id="behavioralProblems" name="BehavioralProblems" required>
+            <option value="">-- Select Option --</option>
+            <option value="0">No</option>
+            <option value="1">Yes</option>
+          </select>
+        </label>
+        <label for="adl">ADL (Activities of Daily Living-Basic Self-care)
+          <select id="adl" name="ADL" required>
+            <option value="">-- Select ADL Level --</option>
+            <option value="1">0–2: Fully Dependent</option>
+            <option value="4">3–5: Mostly Dependent</option>
+            <option value="7">6–8: Mostly Independent</option>
+            <option value="10">9–10: Fully Independent</option>
+          </select>
+        </label>
+      </div>
+
+      <div style="text-align:center;">
+        <button type="submit" id="submitBtn">🔍 Predict</button>
+        <div id="loadingSpinner">⏳ Predicting...</div>
+      </div>
+    </form>
+
+    <div class="result" id="result"></div>
+    <div id="shap-plot"></div>
+  </div>
+
+  <script>
+    const form = document.getElementById('predictForm');
+    const resultDiv = document.getElementById('result');
+    const shapDiv = document.getElementById('shap-plot');
+    const submitBtn = document.getElementById('submitBtn');
+    const loadingSpinner = document.getElementById('loadingSpinner');
+
+    const mmseSelect = document.getElementById('mmseSelect');
+    const mmseCustom = document.getElementById('mmseCustom');
+
+    loadingSpinner.style.display = 'none'; // Hide spinner initially
+
+    // Disable select if custom MMSE entered
+    mmseCustom.addEventListener('input', () => {
+      if (mmseCustom.value.trim() !== '') {
+        mmseSelect.disabled = true;
+      } else {
+        mmseSelect.disabled = false;
+      }
+    });
+
+    // Disable custom if select chosen
+    mmseSelect.addEventListener('change', () => {
+      if (mmseSelect.value !== '') {
+        mmseCustom.value = '';
+        mmseCustom.disabled = true;
+      } else {
+        mmseCustom.disabled = false;
+      }
+    });
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const requiredFields = [
+        'EducationLevel', 'SleepQuality', 'CardiovascularDisease', 'Hypertension',
+        'CholesterolHDL',
+        'FunctionalAssessment', 'MemoryComplaints', 'BehavioralProblems', 'ADL'
+      ];
+
+      for (const name of requiredFields) {
+        const field = form.querySelector(`[name="${name}"]`);
+        if (!field || !field.value) {
+          alert(`Please select a value for "${field.previousElementSibling?.textContent || name}"`);
+          field.focus();
+          return;
+        }
+      }
+
+      const mmseCustomInput = mmseCustom.value.trim();
+      let mmseValue;
+
+      if (mmseCustomInput !== "") {
+        const val = Number(mmseCustomInput);
+        if (isNaN(val) || val < 0 || val > 30) {
+          alert("Please enter a valid MMSE score between 0 and 30.");
+          mmseCustom.focus();
+          return;
+        }
+        mmseValue = val;
+      } else {
+        const mmseSelectVal = mmseSelect.value;
+        if (!mmseSelectVal) {
+          alert("Please select or enter an MMSE score.");
+          mmseSelect.focus();
+          return;
+        }
+        const val = Number(mmseSelectVal);
+        if (val < 0 || val > 30) {
+          alert("Selected MMSE score is invalid.");
+          mmseSelect.focus();
+          return;
+        }
+        mmseValue = val;
+      }
+
+      const formData = new FormData(form);
+      const raw = [];
+
+      for (const [key, val] of formData.entries()) {
+        if (key !== "MMSESelect" && key !== "MMSECustom") {
+          raw.push([key, val]);
+        }
+      }
+
+      let cholesterolIndex = raw.findIndex(([k]) => k === "CholesterolHDL");
+      if (cholesterolIndex === -1) cholesterolIndex = 4;
+
+      raw.splice(cholesterolIndex + 1, 0, ["MMSE", mmseValue]);
+
+      const features = raw.map(([key, val]) => Number(val));
+
+      submitBtn.disabled = true;
+      submitBtn.style.display = 'none';
+      loadingSpinner.style.display = 'block';
+
+      resultDiv.textContent = '';
+      shapDiv.innerHTML = '';
+
+      try {
+        const response = await fetch('/predict', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ features })
+        });
+
+        if (!response.ok) throw new Error(`Server error: ${response.statusText}`);
+
+        const result = await response.json();
+
+        if (result.error) {
+          resultDiv.textContent = "❌ Error: " + result.error;
+          return;
+        }
+
+        let advice = "";
+        if (result.prediction === "The patient has Alzheimer's.") {
+          advice = "🧠 Recommendation: Please consult a neurologist, follow a memory care plan, and ensure a healthy lifestyle.";
+        } else if (result.prediction === "The patient does not have Alzheimer's.") {
+          advice = "✅ Recommendation: The patient is currently at low risk. Continue regular checkups and maintain brain health.";
+        }
+
+        let issues = [];
+
+        if (features[6] <= 5) {
+          issues.push({
+            advice: "Difficulties with daily functioning detected. Consult a healthcare professional for guidance and support."
+          });
+        }
+        if (features[9] <= 5) {
+          issues.push({
+            advice: "Challenges with basic self-care activities noted. Occupational therapy might improve your independence."
+          });
+        }
+        if (features[4] <= 40) {
+          issues.push({
+            advice: "Low HDL cholesterol detected. Consider a heart-healthy lifestyle and consult your doctor."
+          });
+        }
+
+        let healthAdvice;
+        if (issues.length > 0) {
+          healthAdvice = `
+            <div class="advice-box warning">
+              <strong>Health Warnings & Advice:</strong>
+              <ul class="advice-list">
+                ${issues.map(({ advice }) => `<li><span class="advice-bullet"></span>${advice}</li>`).join('')}
+              </ul>
+            </div>
+          `;
+        } else {
+          healthAdvice = `
+            <div class="advice-box success">
+              👍 All key health indicators are within healthy ranges.
+            </div>
+          `;
+        }
+
+        resultDiv.innerHTML = `
+          <p>${result.prediction}</p>
+          <p style="margin-top:10px;">${advice}</p>
+          ${healthAdvice}
+        `;
+
+        if (result.shap_plot) {
+          const img = document.createElement('img');
+          img.src = 'data:image/png;base64,' + result.shap_plot;
+          img.alt = "SHAP Feature Importance Plot";
+          shapDiv.appendChild(img);
+        }
+      } catch (error) {
+        resultDiv.textContent = "❌ Prediction failed. Try again.";
+        console.error(error);
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.style.display = 'inline-block';
+        loadingSpinner.style.display = 'none';
+      }
+    });
+  </script>
+</body>
+</html>
